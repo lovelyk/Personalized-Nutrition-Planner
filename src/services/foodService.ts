@@ -1,5 +1,5 @@
 import foods from "../data/foods.json";
-import type { DietaryPreference, FoodDataProvider, FoodItem, FoodSearchOptions, FoodSearchResult, NutritionTotals } from "../types";
+import type { DietaryPreference, FoodDataProvider, FoodDataSource, FoodItem, FoodSearchOptions, FoodSearchResult, NutritionTotals } from "../types";
 
 const localFoods = foods as FoodItem[];
 
@@ -128,13 +128,38 @@ export const usdaFoodProvider: FoodDataProvider = {
 
 export const nutritionixFoodProvider: FoodDataProvider = {
   source: "nutritionix",
-  async searchFoods() {
-    // Future integration point. Nutritionix requires app credentials that must
-    // be stored on a backend proxy, not bundled into this frontend.
-    return [];
+  async searchFoods(options: FoodSearchOptions = {}) {
+    const query = options.query?.trim();
+    if (!query) return [];
+
+    // Nutritionix Track API v2 uses x-app-id and x-app-key headers. Vite
+    // exposes VITE_* values to browser code, so this direct call is for local
+    // experiments only. Production should route Nutritionix requests through a
+    // backend proxy that stores app credentials server-side.
+    const appId = import.meta.env.VITE_NUTRITIONIX_APP_ID;
+    const appKey = import.meta.env.VITE_NUTRITIONIX_APP_KEY;
+    if (!appId || !appKey) return [];
+
+    const response = await fetch("https://trackapi.nutritionix.com/v2/natural/nutrients", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-app-id": appId,
+        "x-app-key": appKey,
+      },
+      body: JSON.stringify({ query }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Nutritionix request failed: ${response.status}`);
+    }
+
+    const data = (await response.json()) as NutritionixNaturalResponse;
+    return data.foods.slice(0, options.limit ?? 10).map(mapNutritionixFood);
   },
-  async getFoodById() {
-    return undefined;
+  async getFoodById(id: string) {
+    const result = await this.searchFoods({ query: id, limit: 1 });
+    return result[0]?.food;
   },
 };
 
@@ -157,7 +182,15 @@ export const foodProviders = {
   edamam: edamamFoodProvider,
 } satisfies Record<string, FoodDataProvider>;
 
-export async function searchFoods(source: keyof typeof foodProviders, options: FoodSearchOptions = {}) {
+export type SupportedFoodProvider = keyof typeof foodProviders;
+
+export const selectableFoodSources: Array<{ value: SupportedFoodProvider; label: string; description: string }> = [
+  { value: "local", label: "Local", description: "Offline starter database" },
+  { value: "nutritionix", label: "Nutritionix", description: "Requires local demo credentials" },
+  { value: "usda", label: "USDA", description: "Requires local demo key" },
+];
+
+export async function searchFoods(source: SupportedFoodProvider, options: FoodSearchOptions = {}) {
   return foodProviders[source].searchFoods(options);
 }
 
@@ -167,4 +200,62 @@ export async function getLocalFoodItems() {
 
 export function getLocalFoodCatalog() {
   return localFoods;
+}
+
+interface NutritionixNaturalResponse {
+  foods: Array<{
+    food_name: string;
+    brand_name?: string;
+    serving_qty?: number;
+    serving_unit?: string;
+    serving_weight_grams?: number;
+    nf_calories?: number;
+    nf_total_fat?: number;
+    nf_total_carbohydrate?: number;
+    nf_protein?: number;
+    nf_dietary_fiber?: number;
+    nf_sugars?: number;
+    tags?: {
+      item?: string;
+      food_group?: number;
+    };
+  }>;
+}
+
+function mapNutritionixFood(food: NutritionixNaturalResponse["foods"][number], index: number): FoodSearchResult {
+  const servingGrams = food.serving_weight_grams ?? 100;
+  const servingUnit = food.serving_unit?.trim() || "serving";
+  const name = food.food_name || food.tags?.item || "Nutritionix food";
+  const item: FoodItem = {
+    id: `nutritionix-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${index}`,
+    name,
+    category: food.brand_name ?? "Nutritionix food",
+    defaultUnit: "serving",
+    baseAmount: servingGrams,
+    baseUnit: "grams",
+    gramsPerUnit: {
+      serving: servingGrams,
+      grams: 1,
+      oz: 28.35,
+    },
+    nutrition: {
+      calories: food.nf_calories ?? 0,
+      protein: food.nf_protein ?? 0,
+      carbs: food.nf_total_carbohydrate ?? 0,
+      fat: food.nf_total_fat ?? 0,
+      fiber: food.nf_dietary_fiber ?? 0,
+      sugar: food.nf_sugars ?? 0,
+    },
+    dietaryTags: ["balanced"],
+  };
+
+  return {
+    id: `nutritionix:${item.id}`,
+    displayName: `${name}${food.serving_qty && servingUnit ? `, ${food.serving_qty} ${servingUnit}` : ""}`,
+    category: item.category,
+    source: "nutritionix" satisfies FoodDataSource,
+    food: item,
+    externalId: item.id,
+    brandName: food.brand_name,
+  };
 }

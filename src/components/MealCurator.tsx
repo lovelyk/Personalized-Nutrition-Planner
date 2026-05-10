@@ -1,7 +1,7 @@
 import { Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { DietaryPreference, FoodSearchResult, MealEntry, MealSlot, NutritionPlan, Unit } from "../types";
-import { getLocalFoodCatalog, searchFoods } from "../services/foodService";
+import { getLocalFoodCatalog, searchFoods, selectableFoodSources, type SupportedFoodProvider } from "../services/foodService";
 import { addTotals, scaleFoodNutrition } from "../utils/calculations";
 import FoodSearch from "./FoodSearch";
 import ProgressBars from "./ProgressBars";
@@ -16,10 +16,14 @@ interface MealCuratorProps {
 }
 
 export default function MealCurator({ plan, dietaryPreference }: MealCuratorProps) {
-  const [selectedFoodId, setSelectedFoodId] = useState(foodItems[0].id);
+  const [foodSource, setFoodSource] = useState<SupportedFoodProvider>("local");
+  const [selectedFoodId, setSelectedFoodId] = useState(`local:${foodItems[0].id}`);
   const [foodQuery, setFoodQuery] = useState("");
   const [foodResults, setFoodResults] = useState<FoodSearchResult[]>([]);
-  const selectedFood = foodItems.find((food) => food.id === selectedFoodId) ?? foodItems[0];
+  const [searchError, setSearchError] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const selectedResult = foodResults.find((result) => result.id === selectedFoodId);
+  const selectedFood = selectedResult?.food ?? foodResults[0]?.food ?? foodItems[0];
   const [quantity, setQuantity] = useState(1);
   const [unit, setUnit] = useState<Unit>(selectedFood.defaultUnit);
   const [mealSlot, setMealSlot] = useState<MealSlot>("breakfast");
@@ -30,32 +34,47 @@ export default function MealCurator({ plan, dietaryPreference }: MealCuratorProp
 
   useEffect(() => {
     let isActive = true;
+    setIsSearching(true);
+    setSearchError("");
 
-    searchFoods("local", {
+    searchFoods(foodSource, {
       query: foodQuery,
       dietaryFilter: dietaryPreference,
     }).then((results) => {
       if (!isActive) return;
       setFoodResults(results);
-      if (results.length > 0 && !results.some((result) => result.food.id === selectedFoodId)) {
-        setSelectedFoodId(results[0].food.id);
+      if (results.length > 0 && !results.some((result) => result.id === selectedFoodId)) {
+        setSelectedFoodId(results[0].id);
         setUnit(results[0].food.defaultUnit);
+      }
+      if (results.length === 0) {
+        setSelectedFoodId("");
+        if (foodSource !== "local" && foodQuery.trim()) {
+          setSearchError(`No ${foodSource} results found. Check credentials or try a more specific food phrase.`);
+        }
+      }
+    }).catch((error: unknown) => {
+      if (!isActive) return;
+      setFoodResults([]);
+      setSelectedFoodId("");
+      setSearchError(error instanceof Error ? error.message : "Food search failed.");
+    }).finally(() => {
+      if (isActive) {
+        setIsSearching(false);
       }
     });
 
     return () => {
       isActive = false;
     };
-  }, [dietaryPreference, foodQuery, selectedFoodId]);
+  }, [dietaryPreference, foodQuery, foodSource, selectedFoodId]);
 
   const rows = useMemo(
     () =>
       entries.map((entry) => {
-        const food = foodItems.find((item) => item.id === entry.foodId) ?? foodItems[0];
         return {
           ...entry,
-          food,
-          nutrition: scaleFoodNutrition(food, entry.quantity, entry.unit),
+          nutrition: scaleFoodNutrition(entry.food, entry.quantity, entry.unit),
         };
       }),
     [entries],
@@ -71,6 +90,7 @@ export default function MealCurator({ plan, dietaryPreference }: MealCuratorProp
       {
         id: crypto.randomUUID(),
         foodId: selectedFood.id,
+        food: selectedFood,
         mealSlot,
         quantity,
         unit,
@@ -85,10 +105,19 @@ export default function MealCurator({ plan, dietaryPreference }: MealCuratorProp
   const removeEntry = (id: string) => setEntries((current) => current.filter((entry) => entry.id !== id));
   const clearEntries = () => setEntries([]);
 
-  const handleFoodSelect = (foodId: string) => {
-    const nextFood = foodItems.find((food) => food.id === foodId) ?? foodItems[0];
-    setSelectedFoodId(foodId);
-    setUnit(nextFood.defaultUnit);
+  const handleFoodSelect = (resultId: string) => {
+    const nextResult = foodResults.find((result) => result.id === resultId);
+    setSelectedFoodId(resultId);
+    if (nextResult) {
+      setUnit(nextResult.food.defaultUnit);
+    }
+  };
+
+  const handleSourceChange = (source: SupportedFoodProvider) => {
+    setFoodSource(source);
+    setFoodQuery("");
+    setFoodResults([]);
+    setSelectedFoodId("");
   };
 
   return (
@@ -103,7 +132,18 @@ export default function MealCurator({ plan, dietaryPreference }: MealCuratorProp
       <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <FoodSearch results={foodResults} query={foodQuery} selectedFoodId={selectedFoodId} onQueryChange={setFoodQuery} onSelect={handleFoodSelect} />
+            <FoodSearch
+              results={foodResults}
+              query={foodQuery}
+              selectedFoodId={selectedFoodId}
+              source={foodSource}
+              sources={selectableFoodSources}
+              onQueryChange={setFoodQuery}
+              onSelect={handleFoodSelect}
+              onSourceChange={handleSourceChange}
+            />
+            {isSearching && <p className="text-sm text-stone-500">Searching food provider...</p>}
+            {searchError && <p className="text-sm text-rose">{searchError}</p>}
             <label className="block">
               <span className="field-label">Meal</span>
               <select className="field" value={mealSlot} onChange={(event) => setMealSlot(event.target.value as MealSlot)}>
@@ -243,7 +283,7 @@ export default function MealCurator({ plan, dietaryPreference }: MealCuratorProp
       </div>
 
       <p className="mt-4 border-t border-stone-100 pt-4 text-xs leading-5 text-stone-500">
-        Food search currently uses the local offline provider. USDA FoodData Central, Nutritionix, and Edamam are modeled in the food service layer; production API access should run through a backend proxy so keys are not exposed in the browser.
+        Food search can use the local offline provider or external providers such as Nutritionix when local demo credentials are configured. Production API access should run through a backend proxy so keys are not exposed in the browser.
       </p>
     </section>
   );

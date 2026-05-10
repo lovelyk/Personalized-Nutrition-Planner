@@ -122,6 +122,7 @@ export interface FoodDataProvider {
 export interface MealEntry {
   id: string;
   foodId: string;
+  food: FoodItem;
   mealSlot: MealSlot;
   quantity: number;
   unit: Unit;
