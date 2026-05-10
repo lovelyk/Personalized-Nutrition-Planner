@@ -64,8 +64,8 @@ The app provides educational nutrition estimates and does not replace medical ad
 
 ## Future Enhancements
 
-- Secure backend proxy for USDA FoodData Central, Nutritionix, or Edamam API access.
-- Production hardening for the Nutritionix provider that is currently available for local credential-based experiments.
+- Secure backend proxy for USDA FoodData Central, Edamam, or future Nutritionix API access.
+- Production hardening for the Edamam provider that is currently available for local credential-based experiments.
 - User login and saved daily meal plans.
 - Weekly progress tracking and measurements.
 - Barcode scanning.

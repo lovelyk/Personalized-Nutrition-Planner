@@ -63,9 +63,9 @@ src/
 The app now uses a food data service abstraction:
 
 - `local`: offline JSON database used by the MVP.
+- `edamam`: active external provider for local credential-based experiments.
 - `usda`: USDA FoodData Central provider scaffold, ready for local experimentation and future backend-proxied use.
-- `nutritionix`: enabled through the food source selector when local demo credentials are configured.
-- `edamam`: future provider placeholder.
+- `nutritionix`: parked for future development and not shown in the current food source selector.
 
 For local experimentation with USDA, copy `.env.example` to `.env` and add:
 
@@ -73,11 +73,11 @@ For local experimentation with USDA, copy `.env.example` to `.env` and add:
 VITE_USDA_FOODDATA_API_KEY=your_demo_key
 ```
 
-For local experimentation with Nutritionix, add:
+For local experimentation with Edamam, add:
 
 ```bash
-VITE_NUTRITIONIX_APP_ID=your_demo_app_id
-VITE_NUTRITIONIX_APP_KEY=your_demo_app_key
+VITE_EDAMAM_APP_ID=your_demo_app_id
+VITE_EDAMAM_APP_KEY=your_demo_app_key
 ```
 
 Important: `VITE_*` environment variables are bundled into frontend code. Do not expose private, paid, or production API keys in the browser. A production deployment should call USDA, Nutritionix, or Edamam through a backend proxy that stores API keys server-side.
@@ -93,7 +93,7 @@ Important: `VITE_*` environment variables are bundled into frontend code. Do not
 ## Future Enhancements
 
 - Backend proxy for secure external food provider access.
-- Edamam provider implementation.
+- Revisit Nutritionix provider implementation.
 - User login and saved meal plans.
 - Weekly progress tracking.
 - Barcode scanning.

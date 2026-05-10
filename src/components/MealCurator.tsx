@@ -283,7 +283,7 @@ export default function MealCurator({ plan, dietaryPreference }: MealCuratorProp
       </div>
 
       <p className="mt-4 border-t border-stone-100 pt-4 text-xs leading-5 text-stone-500">
-        Food search can use the local offline provider or external providers such as Nutritionix when local demo credentials are configured. Production API access should run through a backend proxy so keys are not exposed in the browser.
+        Food search can use the local offline provider or Edamam when local demo credentials are configured. Data from Edamam is provided by the Edamam Food Database API. Production API access should run through a backend proxy so keys are not exposed in the browser.
       </p>
     </section>
   );

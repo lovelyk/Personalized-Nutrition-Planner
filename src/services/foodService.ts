@@ -1,5 +1,5 @@
 import foods from "../data/foods.json";
-import type { DietaryPreference, FoodDataProvider, FoodDataSource, FoodItem, FoodSearchOptions, FoodSearchResult, NutritionTotals } from "../types";
+import type { DietaryPreference, FoodDataProvider, FoodItem, FoodSearchOptions, FoodSearchResult, NutritionTotals } from "../types";
 
 const localFoods = foods as FoodItem[];
 
@@ -38,6 +38,68 @@ export const localFoodProvider: FoodDataProvider = {
     return localFoods.find((food) => food.id === id);
   },
 };
+
+interface EdamamParserResponse {
+  hints?: Array<{
+    food: {
+      foodId: string;
+      label: string;
+      category?: string;
+      categoryLabel?: string;
+      brand?: string;
+      nutrients?: {
+        ENERC_KCAL?: number;
+        PROCNT?: number;
+        FAT?: number;
+        CHOCDF?: number;
+        FIBTG?: number;
+        SUGAR?: number;
+      };
+    };
+    measures?: Array<{
+      label: string;
+      weight?: number;
+    }>;
+  }>;
+}
+
+function mapEdamamFood(hint: NonNullable<EdamamParserResponse["hints"]>[number]): FoodSearchResult {
+  const nutrients = hint.food.nutrients ?? {};
+  const servingMeasure = hint.measures?.find((measure) => measure.label.toLowerCase() === "serving") ?? hint.measures?.[0];
+  const servingWeight = servingMeasure?.weight ?? 100;
+  const item: FoodItem = {
+    id: `edamam-${hint.food.foodId}`,
+    name: hint.food.label,
+    category: hint.food.categoryLabel ?? hint.food.category ?? "Edamam food",
+    defaultUnit: "grams",
+    baseAmount: 100,
+    baseUnit: "grams",
+    gramsPerUnit: {
+      grams: 1,
+      oz: 28.35,
+      serving: servingWeight,
+    },
+    nutrition: {
+      calories: nutrients.ENERC_KCAL ?? 0,
+      protein: nutrients.PROCNT ?? 0,
+      carbs: nutrients.CHOCDF ?? 0,
+      fat: nutrients.FAT ?? 0,
+      fiber: nutrients.FIBTG ?? 0,
+      sugar: nutrients.SUGAR ?? 0,
+    },
+    dietaryTags: ["balanced"],
+  };
+
+  return {
+    id: `edamam:${hint.food.foodId}`,
+    displayName: hint.food.label,
+    category: item.category,
+    source: "edamam",
+    food: item,
+    externalId: hint.food.foodId,
+    brandName: hint.food.brand,
+  };
+}
 
 interface UsdaFoodSearchResponse {
   foods?: Array<{
@@ -101,7 +163,7 @@ export const usdaFoodProvider: FoodDataProvider = {
 
     // Vite exposes VITE_* variables to browser code. This is acceptable only
     // for local experiments with public/demo keys. For production, do not put
-    // USDA, Nutritionix, Edamam, or any paid API key in frontend code. Route
+    // USDA, Edamam, Nutritionix, or any paid API key in frontend code. Route
     // requests through a backend proxy that keeps secrets server-side.
     const apiKey = import.meta.env.VITE_USDA_FOODDATA_API_KEY;
     if (!apiKey) return [];
@@ -128,50 +190,47 @@ export const usdaFoodProvider: FoodDataProvider = {
 
 export const nutritionixFoodProvider: FoodDataProvider = {
   source: "nutritionix",
-  async searchFoods(options: FoodSearchOptions = {}) {
-    const query = options.query?.trim();
-    if (!query) return [];
-
-    // Nutritionix Track API v2 uses x-app-id and x-app-key headers. Vite
-    // exposes VITE_* values to browser code, so this direct call is for local
-    // experiments only. Production should route Nutritionix requests through a
-    // backend proxy that stores app credentials server-side.
-    const appId = import.meta.env.VITE_NUTRITIONIX_APP_ID;
-    const appKey = import.meta.env.VITE_NUTRITIONIX_APP_KEY;
-    if (!appId || !appKey) return [];
-
-    const response = await fetch("https://trackapi.nutritionix.com/v2/natural/nutrients", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-app-id": appId,
-        "x-app-key": appKey,
-      },
-      body: JSON.stringify({ query }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Nutritionix request failed: ${response.status}`);
-    }
-
-    const data = (await response.json()) as NutritionixNaturalResponse;
-    return data.foods.slice(0, options.limit ?? 10).map(mapNutritionixFood);
+  async searchFoods() {
+    // Parked for future development. Nutritionix is intentionally not exposed
+    // in the current UI because credentials/API availability are not ready.
+    // When revisited, call it through a backend proxy rather than the browser.
+    return [];
   },
-  async getFoodById(id: string) {
-    const result = await this.searchFoods({ query: id, limit: 1 });
-    return result[0]?.food;
+  async getFoodById() {
+    return undefined;
   },
 };
 
 export const edamamFoodProvider: FoodDataProvider = {
   source: "edamam",
-  async searchFoods() {
-    // Future integration point. Edamam app IDs and keys should be protected by
-    // a backend proxy before this source is enabled for production users.
-    return [];
+  async searchFoods(options: FoodSearchOptions = {}) {
+    const query = options.query?.trim();
+    if (!query) return [];
+
+    // Edamam Food Database API credentials are exposed if they are used as
+    // VITE_* browser variables. This direct call is for local experiments only.
+    // Production should use a backend proxy and keep app_id/app_key server-side.
+    const appId = import.meta.env.VITE_EDAMAM_APP_ID;
+    const appKey = import.meta.env.VITE_EDAMAM_APP_KEY;
+    if (!appId || !appKey) return [];
+
+    const params = new URLSearchParams({
+      app_id: appId,
+      app_key: appKey,
+      ingr: query,
+    });
+
+    const response = await fetch(`https://api.edamam.com/api/food-database/v2/parser?${params.toString()}`);
+    if (!response.ok) {
+      throw new Error(`Edamam Food Database request failed: ${response.status}`);
+    }
+
+    const data = (await response.json()) as EdamamParserResponse;
+    return (data.hints ?? []).slice(0, options.limit ?? 10).map(mapEdamamFood);
   },
-  async getFoodById() {
-    return undefined;
+  async getFoodById(id: string) {
+    const result = await this.searchFoods({ query: id, limit: 1 });
+    return result[0]?.food;
   },
 };
 
@@ -186,8 +245,7 @@ export type SupportedFoodProvider = keyof typeof foodProviders;
 
 export const selectableFoodSources: Array<{ value: SupportedFoodProvider; label: string; description: string }> = [
   { value: "local", label: "Local", description: "Offline starter database" },
-  { value: "nutritionix", label: "Nutritionix", description: "Requires local demo credentials" },
-  { value: "usda", label: "USDA", description: "Requires local demo key" },
+  { value: "edamam", label: "Edamam", description: "Requires local demo credentials" },
 ];
 
 export async function searchFoods(source: SupportedFoodProvider, options: FoodSearchOptions = {}) {
@@ -200,62 +258,4 @@ export async function getLocalFoodItems() {
 
 export function getLocalFoodCatalog() {
   return localFoods;
-}
-
-interface NutritionixNaturalResponse {
-  foods: Array<{
-    food_name: string;
-    brand_name?: string;
-    serving_qty?: number;
-    serving_unit?: string;
-    serving_weight_grams?: number;
-    nf_calories?: number;
-    nf_total_fat?: number;
-    nf_total_carbohydrate?: number;
-    nf_protein?: number;
-    nf_dietary_fiber?: number;
-    nf_sugars?: number;
-    tags?: {
-      item?: string;
-      food_group?: number;
-    };
-  }>;
-}
-
-function mapNutritionixFood(food: NutritionixNaturalResponse["foods"][number], index: number): FoodSearchResult {
-  const servingGrams = food.serving_weight_grams ?? 100;
-  const servingUnit = food.serving_unit?.trim() || "serving";
-  const name = food.food_name || food.tags?.item || "Nutritionix food";
-  const item: FoodItem = {
-    id: `nutritionix-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${index}`,
-    name,
-    category: food.brand_name ?? "Nutritionix food",
-    defaultUnit: "serving",
-    baseAmount: servingGrams,
-    baseUnit: "grams",
-    gramsPerUnit: {
-      serving: servingGrams,
-      grams: 1,
-      oz: 28.35,
-    },
-    nutrition: {
-      calories: food.nf_calories ?? 0,
-      protein: food.nf_protein ?? 0,
-      carbs: food.nf_total_carbohydrate ?? 0,
-      fat: food.nf_total_fat ?? 0,
-      fiber: food.nf_dietary_fiber ?? 0,
-      sugar: food.nf_sugars ?? 0,
-    },
-    dietaryTags: ["balanced"],
-  };
-
-  return {
-    id: `nutritionix:${item.id}`,
-    displayName: `${name}${food.serving_qty && servingUnit ? `, ${food.serving_qty} ${servingUnit}` : ""}`,
-    category: item.category,
-    source: "nutritionix" satisfies FoodDataSource,
-    food: item,
-    externalId: item.id,
-    brandName: food.brand_name,
-  };
 }

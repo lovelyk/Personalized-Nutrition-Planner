@@ -31,7 +31,7 @@ export default function FoodSearch({ results, query, selectedFoodId, source, sou
         <span className="field-label">Search food</span>
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-stone-400" />
-          <input className="field pl-9" value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder={source === "local" ? "Search local foods..." : "Try: 1 cup rice, 2 eggs..."} />
+          <input className="field pl-9" value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder={source === "local" ? "Search local foods..." : "Try: rice, apple, chicken..."} />
         </div>
       </label>
 
