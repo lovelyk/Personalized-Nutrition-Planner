@@ -243,7 +243,7 @@ export default function MealCurator({ plan, dietaryPreference }: MealCuratorProp
       </div>
 
       <p className="mt-4 text-xs leading-5 text-stone-500">
-        Food data is a small local starter database. API integration can be added in this component by replacing the JSON import with calls to USDA FoodData Central, Nutritionix, or Edamam.
+        Food search currently uses the local offline provider. USDA FoodData Central, Nutritionix, and Edamam are modeled in the food service layer; production API access should run through a backend proxy so keys are not exposed in the browser.
       </p>
     </section>
   );
