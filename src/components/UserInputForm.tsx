@@ -1,4 +1,4 @@
-import { Calculator, ShieldAlert } from "lucide-react";
+import { ShieldAlert } from "lucide-react";
 import { useState } from "react";
 import type { ActivityLevel, DietaryPreference, Goal, LifestyleType, MedicalConsideration, Pace, Sex, UserProfile, ValidationIssue } from "../types";
 import { goalLabels, medicalLabels, paceLabels } from "../utils/calculations";
@@ -130,16 +130,15 @@ export default function UserInputForm({ profile, issues, onChange }: UserInputFo
   };
 
   return (
-    <section className="card p-5">
-      <div className="mb-5 flex items-start justify-between gap-4">
+    <section className="card p-5 sm:p-6">
+      <div className="mb-6">
         <div>
           <h2 className="text-xl font-semibold text-ink">Intake</h2>
-          <p className="mt-1 text-sm leading-6 text-stone-600">Enter realistic values. Estimates update instantly.</p>
+          <p className="mt-1 text-sm leading-6 text-stone-500">Enter realistic values. Estimates update instantly.</p>
         </div>
-        <Calculator className="h-6 w-6 text-calm" />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3">
         <NumberField label="Age" value={profile.age} min={18} max={100} onChange={(value) => update("age", value ?? Number.NaN)} issue={firstIssue("age")} />
         <label className="block">
           <span className="field-label">Sex</span>
@@ -151,8 +150,8 @@ export default function UserInputForm({ profile, issues, onChange }: UserInputFo
         <NumberField label="Exercise frequency" value={profile.exerciseFrequency} min={0} max={14} onChange={(value) => update("exerciseFrequency", value ?? Number.NaN)} helper="Sessions per week" issue={firstIssue("exerciseFrequency")} />
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1fr]">
-        <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
+      <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_1fr]">
+        <div className="rounded-lg border border-stone-200/70 bg-stone-50/60 p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <span className="field-label">Height</span>
             <UnitToggle
@@ -191,7 +190,7 @@ export default function UserInputForm({ profile, issues, onChange }: UserInputFo
           )}
         </div>
 
-        <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
+        <div className="rounded-lg border border-stone-200/70 bg-stone-50/60 p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <span className="field-label">Weight</span>
             <UnitToggle
@@ -228,7 +227,7 @@ export default function UserInputForm({ profile, issues, onChange }: UserInputFo
         </div>
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      <div className="mt-6 grid gap-4 md:grid-cols-2">
         <label className="block">
           <span className="field-label">Activity level</span>
           <select className="field" value={profile.activityLevel} onChange={(event) => update("activityLevel", event.target.value as ActivityLevel)}>
@@ -265,7 +264,7 @@ export default function UserInputForm({ profile, issues, onChange }: UserInputFo
         </label>
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+      <div className="mt-6 grid gap-4 md:grid-cols-3">
         <label className="block">
           <span className="field-label">Goal</span>
           <select className="field" value={profile.goal} onChange={(event) => update("goal", event.target.value as Goal)}>
@@ -289,19 +288,19 @@ export default function UserInputForm({ profile, issues, onChange }: UserInputFo
         <NumberField label="Target timeline" value={profile.targetTimelineWeeks} min={1} max={104} onChange={(value) => update("targetTimelineWeeks", value)} helper="Optional weeks" issue={firstIssue("targetTimelineWeeks")} />
       </div>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <NumberField label="Body fat" value={profile.bodyFatPercentage} min={5} max={60} step={0.1} onChange={(value) => update("bodyFatPercentage", value)} helper="Optional percentage for Katch-McArdle comparison" issue={firstIssue("bodyFatPercentage")} />
         <NumberField label="Waist measurement" value={profile.waistCm} min={40} max={200} step={0.1} onChange={(value) => update("waistCm", value)} helper="Optional centimeters" issue={firstIssue("waistCm")} />
       </div>
 
-      <div className="mt-5 rounded-lg border border-citrus/30 bg-citrus/5 p-4">
-        <div className="mb-3 flex items-center gap-2 font-semibold text-ink">
-          <ShieldAlert className="h-5 w-5 text-citrus" />
+      <div className="mt-6 border-t border-stone-200 pt-5">
+        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink">
+          <ShieldAlert className="h-4 w-4 text-citrus" />
           Medical considerations
         </div>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {Object.entries(medicalLabels).map(([value, label]) => (
-            <label key={value} className="flex items-center gap-2 rounded-md bg-white px-3 py-2 text-sm text-stone-700">
+            <label key={value} className="flex items-center gap-2 rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700">
               <input
                 type="checkbox"
                 checked={profile.medicalConsiderations.includes(value as MedicalConsideration)}

@@ -92,16 +92,16 @@ export default function MealCurator({ plan, dietaryPreference }: MealCuratorProp
   };
 
   return (
-    <section className="card p-5">
+    <section className="card p-5 sm:p-6">
       <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
         <div>
           <h2 className="text-xl font-semibold text-ink">Curate Your Meals</h2>
-          <p className="mt-1 text-sm leading-6 text-stone-600">Build a simple day of eating from the active food provider and compare it with your targets.</p>
+          <p className="mt-1 text-sm leading-6 text-stone-500">Build a simple day of eating from the active food provider and compare it with your targets.</p>
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
+      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <div>
           <div className="grid gap-4 sm:grid-cols-2">
             <FoodSearch results={foodResults} query={foodQuery} selectedFoodId={selectedFoodId} onQueryChange={setFoodQuery} onSelect={handleFoodSelect} />
             <label className="block">
@@ -130,7 +130,7 @@ export default function MealCurator({ plan, dietaryPreference }: MealCuratorProp
             </label>
           </div>
 
-          <div className="mt-4 grid gap-3 rounded-md bg-white p-3 text-sm sm:grid-cols-3">
+          <div className="mt-4 grid gap-2 rounded-lg border border-stone-200 bg-stone-50/70 p-3 text-sm text-stone-700 sm:grid-cols-3">
             <span>{itemPreview.calories} kcal</span>
             <span>{itemPreview.protein} g protein</span>
             <span>{itemPreview.carbs} g carbs</span>
@@ -161,7 +161,7 @@ export default function MealCurator({ plan, dietaryPreference }: MealCuratorProp
         </div>
       </div>
 
-      <div className="mt-5 flex items-center justify-between gap-3">
+      <div className="mt-8 flex items-center justify-between gap-3 border-t border-stone-200 pt-5">
         <div>
           <h3 className="font-semibold text-ink">Daily food list</h3>
           <p className="text-sm text-stone-500">Edit meal, amount, or unit any time.</p>
@@ -178,7 +178,7 @@ export default function MealCurator({ plan, dietaryPreference }: MealCuratorProp
       </div>
 
       <div className="mt-3 overflow-hidden rounded-lg border border-stone-200">
-        <div className="hidden grid-cols-12 bg-stone-100 px-3 py-2 text-xs font-semibold uppercase text-stone-500 md:grid">
+        <div className="hidden grid-cols-12 bg-stone-50 px-3 py-2 text-xs font-semibold uppercase text-stone-500 md:grid">
           <span className="col-span-2">Food</span>
           <span className="col-span-2">Meal</span>
           <span className="col-span-2">Quantity</span>
@@ -242,7 +242,7 @@ export default function MealCurator({ plan, dietaryPreference }: MealCuratorProp
         )}
       </div>
 
-      <p className="mt-4 text-xs leading-5 text-stone-500">
+      <p className="mt-4 border-t border-stone-100 pt-4 text-xs leading-5 text-stone-500">
         Food search currently uses the local offline provider. USDA FoodData Central, Nutritionix, and Edamam are modeled in the food service layer; production API access should run through a backend proxy so keys are not exposed in the browser.
       </p>
     </section>

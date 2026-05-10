@@ -1,5 +1,3 @@
-import { CheckCircle2, TriangleAlert } from "lucide-react";
-
 interface ProgressBarsProps {
   label: string;
   value: number;
@@ -33,7 +31,6 @@ export default function ProgressBars({ label, value, target, unit, tone = "calor
         <div className={`h-full rounded-full ${toneClasses[tone]}`} style={{ width: `${Math.min(percent, 100)}%` }} />
       </div>
       <div className={`flex items-center gap-1 text-xs ${overTarget ? "text-rose" : "text-stone-500"}`}>
-        {overTarget ? <TriangleAlert className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
         {overTarget ? `${Math.round(value - target)} ${unit} over target` : `${Math.round(remaining)} ${unit} remaining`}
       </div>
     </div>

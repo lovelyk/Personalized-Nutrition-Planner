@@ -4,7 +4,7 @@
 
 :root {
   color: #17202a;
-  background: #f6f7f4;
+  background: #fafaf8;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -26,18 +26,18 @@ textarea {
 
 @layer components {
   .card {
-    @apply rounded-lg border border-stone-200 bg-white shadow-sm;
+    @apply rounded-lg border border-stone-200/80 bg-white;
   }
 
   .field-label {
-    @apply text-sm font-medium text-stone-700;
+    @apply text-xs font-semibold uppercase text-stone-500;
   }
 
   .field {
-    @apply mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-calm focus:ring-2 focus:ring-calm/20;
+    @apply mt-1 w-full rounded-md border border-stone-200 bg-white px-3 py-2.5 text-sm text-ink outline-none transition focus:border-calm focus:ring-2 focus:ring-calm/15;
   }
 
   .help-text {
-    @apply mt-1 text-xs leading-5 text-stone-500;
+    @apply mt-1.5 text-xs leading-5 text-stone-500;
   }
 }
