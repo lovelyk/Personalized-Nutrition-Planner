@@ -1,7 +1,11 @@
 import { Calculator, ShieldAlert } from "lucide-react";
+import { useState } from "react";
 import type { ActivityLevel, DietaryPreference, Goal, LifestyleType, MedicalConsideration, Pace, Sex, UserProfile, ValidationIssue } from "../types";
 import { goalLabels, medicalLabels, paceLabels } from "../utils/calculations";
 import { issuesByField } from "../utils/validation";
+
+type HeightUnit = "cm" | "ft-in";
+type WeightUnit = "kg" | "lb";
 
 interface UserInputFormProps {
   profile: UserProfile;
@@ -32,6 +36,18 @@ const lifestyleOptions: Array<{ value: LifestyleType; label: string }> = [
   { value: "active", label: "Active" },
   { value: "very-active", label: "Very active" },
 ];
+
+const kgToLb = (kg: number | undefined) => (kg === undefined || Number.isNaN(kg) ? undefined : Math.round(kg * 22.0462) / 10);
+const lbToKg = (lb: number | undefined) => (lb === undefined || Number.isNaN(lb) ? Number.NaN : Math.round((lb / 2.20462) * 10) / 10);
+const cmToFeet = (cm: number | undefined) => {
+  if (cm === undefined || Number.isNaN(cm)) return { feet: undefined, inches: undefined };
+  const totalInches = Math.round(cm / 2.54);
+  return { feet: Math.floor(totalInches / 12), inches: totalInches % 12 };
+};
+const feetInchesToCm = (feet: number | undefined, inches: number | undefined) => {
+  if (feet === undefined || inches === undefined || Number.isNaN(feet) || Number.isNaN(inches)) return Number.NaN;
+  return Math.round((feet * 12 + inches) * 2.54 * 10) / 10;
+};
 
 function NumberField({
   label,
@@ -71,10 +87,36 @@ function NumberField({
   );
 }
 
+function UnitToggle<T extends string>({ value, options, onChange }: { value: T; options: Array<{ value: T; label: string }>; onChange: (value: T) => void }) {
+  return (
+    <div className="inline-flex rounded-md border border-stone-300 bg-white p-1">
+      {options.map((option) => (
+        <button
+          key={option.value}
+          className={`rounded px-2.5 py-1 text-xs font-semibold transition ${
+            value === option.value ? "bg-calm text-white" : "text-stone-600 hover:bg-stone-100"
+          }`}
+          type="button"
+          onClick={() => onChange(option.value)}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function UserInputForm({ profile, issues, onChange }: UserInputFormProps) {
+  const [heightUnit, setHeightUnit] = useState<HeightUnit>("cm");
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>("kg");
   const fieldIssues = issuesByField(issues);
   const update = <K extends keyof UserProfile>(key: K, value: UserProfile[K]) => onChange({ ...profile, [key]: value });
   const firstIssue = (field: keyof UserProfile) => fieldIssues[field]?.[0];
+  const heightParts = cmToFeet(profile.heightCm);
+  const heightIssue = firstIssue("heightCm");
+  const currentWeightIssue = firstIssue("currentWeightKg");
+  const goalWeightIssue = firstIssue("goalWeightKg");
+  const weightHelper = weightUnit === "kg" ? "Kilograms" : "Pounds, converted to kg for calculations";
 
   const toggleMedical = (value: MedicalConsideration) => {
     if (value === "none") {
@@ -106,10 +148,84 @@ export default function UserInputForm({ profile, issues, onChange }: UserInputFo
             <option value="male">Male</option>
           </select>
         </label>
-        <NumberField label="Height" value={profile.heightCm} min={120} max={230} onChange={(value) => update("heightCm", value ?? Number.NaN)} helper="Centimeters" issue={firstIssue("heightCm")} />
-        <NumberField label="Current weight" value={profile.currentWeightKg} min={35} max={250} step={0.1} onChange={(value) => update("currentWeightKg", value ?? Number.NaN)} helper="Kilograms" issue={firstIssue("currentWeightKg")} />
-        <NumberField label="Goal weight" value={profile.goalWeightKg} min={35} max={250} step={0.1} onChange={(value) => update("goalWeightKg", value ?? Number.NaN)} helper="Kilograms" issue={firstIssue("goalWeightKg")} />
         <NumberField label="Exercise frequency" value={profile.exerciseFrequency} min={0} max={14} onChange={(value) => update("exerciseFrequency", value ?? Number.NaN)} helper="Sessions per week" issue={firstIssue("exerciseFrequency")} />
+      </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1fr]">
+        <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <span className="field-label">Height</span>
+            <UnitToggle
+              value={heightUnit}
+              options={[
+                { value: "cm", label: "cm" },
+                { value: "ft-in", label: "ft/in" },
+              ]}
+              onChange={setHeightUnit}
+            />
+          </div>
+          {heightUnit === "cm" ? (
+            <NumberField label="Height" value={profile.heightCm} min={120} max={230} onChange={(value) => update("heightCm", value ?? Number.NaN)} helper="Centimeters" issue={heightIssue} />
+          ) : (
+            <div>
+              <div className="grid grid-cols-2 gap-3">
+                <NumberField
+                  label="Feet"
+                  value={heightParts.feet}
+                  min={3}
+                  max={7}
+                  onChange={(feet) => update("heightCm", feetInchesToCm(feet, heightParts.inches ?? 0))}
+                />
+                <NumberField
+                  label="Inches"
+                  value={heightParts.inches}
+                  min={0}
+                  max={11}
+                  step={0.5}
+                  onChange={(inches) => update("heightCm", feetInchesToCm(heightParts.feet ?? 0, inches))}
+                  issue={heightIssue}
+                />
+              </div>
+              <p className="help-text">Converted to {Number.isNaN(profile.heightCm) ? "--" : profile.heightCm} cm for calculations.</p>
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <span className="field-label">Weight</span>
+            <UnitToggle
+              value={weightUnit}
+              options={[
+                { value: "kg", label: "kg" },
+                { value: "lb", label: "lb" },
+              ]}
+              onChange={setWeightUnit}
+            />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <NumberField
+              label="Current weight"
+              value={weightUnit === "kg" ? profile.currentWeightKg : kgToLb(profile.currentWeightKg)}
+              min={weightUnit === "kg" ? 35 : 77}
+              max={weightUnit === "kg" ? 250 : 551}
+              step={0.1}
+              onChange={(value) => update("currentWeightKg", weightUnit === "kg" ? (value ?? Number.NaN) : lbToKg(value))}
+              helper={weightHelper}
+              issue={currentWeightIssue}
+            />
+            <NumberField
+              label="Goal weight"
+              value={weightUnit === "kg" ? profile.goalWeightKg : kgToLb(profile.goalWeightKg)}
+              min={weightUnit === "kg" ? 35 : 77}
+              max={weightUnit === "kg" ? 250 : 551}
+              step={0.1}
+              onChange={(value) => update("goalWeightKg", weightUnit === "kg" ? (value ?? Number.NaN) : lbToKg(value))}
+              helper={weightHelper}
+              issue={goalWeightIssue}
+            />
+          </div>
+        </div>
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">

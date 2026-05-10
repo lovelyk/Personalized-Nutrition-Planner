@@ -26,6 +26,7 @@ This app provides educational nutrition estimates only. It does not diagnose, tr
 ## MVP Features
 
 - Intake form for body metrics, activity, goals, diet preference, and medical considerations.
+- Height entry in centimeters or feet/inches, and weight entry in kilograms or pounds.
 - Field-level validation with helpful errors and warnings.
 - Mifflin-St Jeor BMR and TDEE calculation.
 - Optional Katch-McArdle BMR comparison when body fat percentage is entered.
