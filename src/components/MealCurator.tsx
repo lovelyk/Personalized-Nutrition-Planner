@@ -1,12 +1,12 @@
 import { Plus, RotateCcw, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
-import foods from "../data/foods.json";
-import type { DietaryPreference, FoodItem, MealEntry, MealSlot, NutritionPlan, Unit } from "../types";
+import { useEffect, useMemo, useState } from "react";
+import type { DietaryPreference, FoodSearchResult, MealEntry, MealSlot, NutritionPlan, Unit } from "../types";
+import { getLocalFoodCatalog, searchFoods } from "../services/foodService";
 import { addTotals, scaleFoodNutrition } from "../utils/calculations";
 import FoodSearch from "./FoodSearch";
 import ProgressBars from "./ProgressBars";
 
-const foodItems = foods as FoodItem[];
+const foodItems = getLocalFoodCatalog();
 const units: Unit[] = ["grams", "oz", "cup", "tbsp", "tsp", "piece", "serving"];
 const mealSlots: MealSlot[] = ["breakfast", "lunch", "dinner", "snacks"];
 
@@ -17,14 +17,36 @@ interface MealCuratorProps {
 
 export default function MealCurator({ plan, dietaryPreference }: MealCuratorProps) {
   const [selectedFoodId, setSelectedFoodId] = useState(foodItems[0].id);
+  const [foodQuery, setFoodQuery] = useState("");
+  const [foodResults, setFoodResults] = useState<FoodSearchResult[]>([]);
   const selectedFood = foodItems.find((food) => food.id === selectedFoodId) ?? foodItems[0];
   const [quantity, setQuantity] = useState(1);
   const [unit, setUnit] = useState<Unit>(selectedFood.defaultUnit);
   const [mealSlot, setMealSlot] = useState<MealSlot>("breakfast");
   const [entries, setEntries] = useState<MealEntry[]>([]);
-  const canAdd = Number.isFinite(quantity) && quantity > 0;
+  const canAdd = Number.isFinite(quantity) && quantity > 0 && foodResults.length > 0;
 
   const itemPreview = scaleFoodNutrition(selectedFood, canAdd ? quantity : 0, unit);
+
+  useEffect(() => {
+    let isActive = true;
+
+    searchFoods("local", {
+      query: foodQuery,
+      dietaryFilter: dietaryPreference,
+    }).then((results) => {
+      if (!isActive) return;
+      setFoodResults(results);
+      if (results.length > 0 && !results.some((result) => result.food.id === selectedFoodId)) {
+        setSelectedFoodId(results[0].food.id);
+        setUnit(results[0].food.defaultUnit);
+      }
+    });
+
+    return () => {
+      isActive = false;
+    };
+  }, [dietaryPreference, foodQuery, selectedFoodId]);
 
   const rows = useMemo(
     () =>
@@ -81,7 +103,7 @@ export default function MealCurator({ plan, dietaryPreference }: MealCuratorProp
       <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            <FoodSearch foods={foodItems} selectedFoodId={selectedFoodId} onSelect={handleFoodSelect} dietaryFilter={dietaryPreference} />
+            <FoodSearch results={foodResults} query={foodQuery} selectedFoodId={selectedFoodId} onQueryChange={setFoodQuery} onSelect={handleFoodSelect} />
             <label className="block">
               <span className="field-label">Meal</span>
               <select className="field" value={mealSlot} onChange={(event) => setMealSlot(event.target.value as MealSlot)}>
@@ -117,7 +139,7 @@ export default function MealCurator({ plan, dietaryPreference }: MealCuratorProp
             <span>{itemPreview.sugar} g sugar</span>
           </div>
 
-          {!canAdd && <p className="mt-3 text-sm text-rose">Enter a quantity greater than zero before adding food.</p>}
+          {!canAdd && <p className="mt-3 text-sm text-rose">Choose a matching food and enter a quantity greater than zero before adding food.</p>}
 
           <button
             className="mt-4 inline-flex items-center gap-2 rounded-md bg-calm px-4 py-2 text-sm font-semibold text-white transition hover:bg-calm/90 disabled:cursor-not-allowed disabled:bg-stone-300"

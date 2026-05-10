@@ -50,11 +50,29 @@ src/
     UserInputForm.tsx
   data/
     foods.json
+  services/
+    foodService.ts
   utils/
     calculations.ts
     validation.ts
   types.ts
 ```
+
+## Food Data Sources
+
+The app now uses a food data service abstraction:
+
+- `local`: offline JSON database used by the MVP.
+- `usda`: USDA FoodData Central provider scaffold.
+- `nutritionix` and `edamam`: future provider placeholders.
+
+For local experimentation with USDA, copy `.env.example` to `.env` and add:
+
+```bash
+VITE_USDA_FOODDATA_API_KEY=your_demo_key
+```
+
+Important: `VITE_*` environment variables are bundled into frontend code. Do not expose private, paid, or production API keys in the browser. A production deployment should call USDA, Nutritionix, or Edamam through a backend proxy that stores API keys server-side.
 
 ## Calculation Notes
 

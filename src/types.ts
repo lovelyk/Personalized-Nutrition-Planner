@@ -95,6 +95,30 @@ export interface FoodItem {
   dietaryTags: DietaryPreference[];
 }
 
+export type FoodDataSource = "local" | "usda" | "nutritionix" | "edamam";
+
+export interface FoodSearchResult {
+  id: string;
+  displayName: string;
+  category: string;
+  source: FoodDataSource;
+  food: FoodItem;
+  externalId?: string;
+  brandName?: string;
+}
+
+export interface FoodSearchOptions {
+  query?: string;
+  dietaryFilter?: DietaryPreference;
+  limit?: number;
+}
+
+export interface FoodDataProvider {
+  source: FoodDataSource;
+  searchFoods: (options?: FoodSearchOptions) => Promise<FoodSearchResult[]>;
+  getFoodById: (id: string) => Promise<FoodItem | undefined>;
+}
+
 export interface MealEntry {
   id: string;
   foodId: string;
