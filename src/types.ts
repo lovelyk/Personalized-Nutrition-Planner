@@ -66,6 +66,7 @@ export interface NutritionPlan {
   katchBmr?: number;
   plannedCalorieAdjustmentPercent: number;
   actualCalorieAdjustmentPercent: number;
+  timelineCalorieAdjustment?: number;
   targetCalories: number;
   macros: MacroTargets;
   mealDistribution: MealDistribution;

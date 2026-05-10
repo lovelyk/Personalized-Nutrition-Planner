@@ -10,6 +10,7 @@ Build a locally hosted browser app that helps users estimate daily calorie needs
 - Mifflin-St Jeor BMR and TDEE calculation.
 - Optional Katch-McArdle comparison when body fat percentage is supplied.
 - Goal-based calorie recommendation for fat loss, maintenance, muscle gain, or recomposition.
+- Optional target timeline adjusts calorie targets for fat-loss or muscle-gain goals when the implied direction matches the selected goal.
 - Macro targets for protein, carbs, fat, fiber, and water.
 - Meal curator using local JSON food data through a food service abstraction.
 - Daily nutrition totals and remaining calories/macros.

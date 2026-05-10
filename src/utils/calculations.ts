@@ -101,6 +101,62 @@ function getGoalAdjustmentPercent(goal: Goal, pace: Pace) {
   return 0;
 }
 
+function getTimelineCalorieAdjustment(profile: UserProfile) {
+  if (!profile.targetTimelineWeeks || profile.targetTimelineWeeks <= 0) {
+    return undefined;
+  }
+
+  const weightChangeKg = profile.goalWeightKg - profile.currentWeightKg;
+  if (weightChangeKg === 0 || profile.goal === "maintenance" || profile.goal === "recomposition") {
+    return undefined;
+  }
+
+  // A common planning approximation is about 7,700 kcal per kg of body-weight
+  // change. This is only an estimate, so the result still goes through the
+  // app's deficit/surplus caps and safety warnings.
+  return (weightChangeKg * 7700) / (profile.targetTimelineWeeks * 7);
+}
+
+function getSafeSurplusCeiling(tdee: number) {
+  return tdee * 1.15;
+}
+
+function getGoalCalorieTarget(profile: UserProfile, tdee: number) {
+  const plannedCalorieAdjustmentPercent = getGoalAdjustmentPercent(profile.goal, profile.pace);
+  const defaultAdjustment = tdee * plannedCalorieAdjustmentPercent;
+  const timelineAdjustment = getTimelineCalorieAdjustment(profile);
+  const shouldUseTimeline =
+    timelineAdjustment !== undefined &&
+    ((profile.goal === "fat-loss" && timelineAdjustment < 0) || (profile.goal === "muscle-gain" && timelineAdjustment > 0));
+  const chosenAdjustment = shouldUseTimeline ? timelineAdjustment : defaultAdjustment;
+  const rawTarget = tdee + chosenAdjustment;
+
+  if (profile.goal === "fat-loss" || profile.goal === "recomposition") {
+    return {
+      plannedCalorieAdjustmentPercent,
+      rawTarget,
+      targetCalories: Math.max(rawTarget, getDeficitFloor(profile, tdee)),
+      timelineAdjustment: shouldUseTimeline ? timelineAdjustment : undefined,
+    };
+  }
+
+  if (profile.goal === "muscle-gain") {
+    return {
+      plannedCalorieAdjustmentPercent,
+      rawTarget,
+      targetCalories: Math.min(rawTarget, getSafeSurplusCeiling(tdee)),
+      timelineAdjustment: shouldUseTimeline ? timelineAdjustment : undefined,
+    };
+  }
+
+  return {
+    plannedCalorieAdjustmentPercent,
+    rawTarget,
+    targetCalories: rawTarget,
+    timelineAdjustment: undefined,
+  };
+}
+
 function proteinPerKg(goal: Goal, preference: DietaryPreference) {
   let grams = 1.5;
   if (goal === "maintenance") grams = 1.5;
@@ -162,7 +218,7 @@ function calculateMacros(profile: UserProfile, calories: number): MacroTargets {
   };
 }
 
-function buildWarnings(profile: UserProfile, targetCalories: number, rawTarget: number, tdee: number, macros: MacroTargets) {
+function buildWarnings(profile: UserProfile, targetCalories: number, rawTarget: number, tdee: number, macros: MacroTargets, timelineAdjustment?: number) {
   const warnings: string[] = [];
   const safeMinimum = getDeficitFloor(profile, tdee);
   const deficitPercent = (tdee - targetCalories) / tdee;
@@ -170,6 +226,14 @@ function buildWarnings(profile: UserProfile, targetCalories: number, rawTarget: 
 
   if (rawTarget < safeMinimum) {
     warnings.push(`The calculated target was below the app's safety floor, so it was raised to ${Math.round(safeMinimum)} calories. Do not follow very-low-calorie diets without medical supervision.`);
+  }
+
+  if (profile.goal === "muscle-gain" && rawTarget > getSafeSurplusCeiling(tdee)) {
+    warnings.push("The timeline-based surplus was above the app's gain ceiling, so calories were capped to keep the plan gradual.");
+  }
+
+  if (timelineAdjustment !== undefined && Math.round(targetCalories) !== Math.round(rawTarget)) {
+    warnings.push("Your timeline target was adjusted by the app's safety limits. Consider a longer timeline if the adjusted calories feel too aggressive.");
   }
 
   if (profile.goal === "fat-loss" && profile.pace === "aggressive") {
@@ -237,12 +301,11 @@ export function calculateNutritionPlan(profile: UserProfile): NutritionPlan {
   const bmr = mifflinStJeor(profile);
   const activityFactor = activityFactors[profile.activityLevel];
   const tdee = bmr * activityFactor;
-  const plannedCalorieAdjustmentPercent = getGoalAdjustmentPercent(profile.goal, profile.pace);
-  const rawTarget = tdee * (1 + plannedCalorieAdjustmentPercent);
-  const targetCalories = profile.goal === "fat-loss" || profile.goal === "recomposition" ? Math.max(rawTarget, getDeficitFloor(profile, tdee)) : rawTarget;
+  const goalTarget = getGoalCalorieTarget(profile, tdee);
+  const { plannedCalorieAdjustmentPercent, rawTarget, targetCalories, timelineAdjustment } = goalTarget;
   const actualCalorieAdjustmentPercent = (targetCalories - tdee) / tdee;
   const macros = calculateMacros(profile, targetCalories);
-  const warnings = buildWarnings(profile, targetCalories, rawTarget, tdee, macros);
+  const warnings = buildWarnings(profile, targetCalories, rawTarget, tdee, macros, timelineAdjustment);
   const notes = buildNotes(profile, macros);
   const katchBmrValue = katchMcArdle(profile);
 
@@ -262,6 +325,7 @@ export function calculateNutritionPlan(profile: UserProfile): NutritionPlan {
     katchBmr: katchBmrValue ? Math.round(katchBmrValue) : undefined,
     plannedCalorieAdjustmentPercent: round(plannedCalorieAdjustmentPercent * 100, 1),
     actualCalorieAdjustmentPercent: round(actualCalorieAdjustmentPercent * 100, 1),
+    timelineCalorieAdjustment: timelineAdjustment !== undefined ? Math.round(timelineAdjustment) : undefined,
     targetCalories: Math.round(targetCalories),
     macros,
     mealDistribution: {
