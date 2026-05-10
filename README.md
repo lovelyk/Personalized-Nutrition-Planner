@@ -72,6 +72,8 @@ For local experimentation with USDA, copy `.env.example` to `.env` and add:
 VITE_USDA_FOODDATA_API_KEY=your_demo_key
 ```
 
+For quick local testing, USDA also supports `DEMO_KEY`, but it has lower rate limits than a personal key.
+
 Important: `VITE_*` environment variables are bundled into frontend code. Do not expose private, paid, or production API keys in the browser. A production deployment should call USDA or Nutritionix through a backend proxy that stores API keys server-side.
 
 ## Calculation Notes
