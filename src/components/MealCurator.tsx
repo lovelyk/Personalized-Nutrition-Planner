@@ -96,7 +96,7 @@ export default function MealCurator({ plan, dietaryPreference }: MealCuratorProp
       <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
         <div>
           <h2 className="text-xl font-semibold text-ink">Curate Your Meals</h2>
-          <p className="mt-1 text-sm leading-6 text-stone-600">Build a simple day of eating from local food data and compare it with your targets.</p>
+          <p className="mt-1 text-sm leading-6 text-stone-600">Build a simple day of eating from the active food provider and compare it with your targets.</p>
         </div>
       </div>
 

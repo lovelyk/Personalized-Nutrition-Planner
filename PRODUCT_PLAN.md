@@ -2,7 +2,7 @@
 
 ## Product Requirements
 
-Build a locally hosted browser app that helps users estimate daily calorie needs, choose a goal-based calorie and macro target, and curate a daily meal list from a small local food database. The app is educational only and must avoid medical certainty, extreme calorie recommendations, or disease-specific treatment guidance.
+Build a locally hosted browser app that helps users estimate daily calorie needs, choose a goal-based calorie and macro target, and curate a daily meal list through a local-first food data provider. The app is educational only and must avoid medical certainty, extreme calorie recommendations, or disease-specific treatment guidance.
 
 ## MVP Scope
 
@@ -11,7 +11,7 @@ Build a locally hosted browser app that helps users estimate daily calorie needs
 - Optional Katch-McArdle comparison when body fat percentage is supplied.
 - Goal-based calorie recommendation for fat loss, maintenance, muscle gain, or recomposition.
 - Macro targets for protein, carbs, fat, fiber, and water.
-- Meal curator using local JSON food data.
+- Meal curator using local JSON food data through a food service abstraction.
 - Daily nutrition totals and remaining calories/macros.
 - Responsive dashboard with clear safety disclaimers and warnings.
 
@@ -19,7 +19,8 @@ Build a locally hosted browser app that helps users estimate daily calorie needs
 
 - `UserProfile`: intake answers and optional body composition/timeline fields.
 - `NutritionPlan`: calculated BMR, TDEE, calorie target, macro targets, warnings, explanation, and meal distribution.
-- `FoodItem`: local food database entry normalized around a base quantity.
+- `FoodItem`: normalized food entry from the active provider.
+- `FoodSearchResult`: provider-agnostic search result that can represent local, USDA, Nutritionix, or Edamam data.
 - `MealEntry`: selected food, quantity, unit, meal slot, and derived nutrition.
 - `NutritionTotals`: calories, protein, carbs, fat, fiber, and sugar.
 
@@ -58,12 +59,12 @@ The app provides educational nutrition estimates and does not replace medical ad
 - `CalorieSummary`: BMR, TDEE, calorie target, explanations, warnings.
 - `MacroTargets`: macro cards, fiber, water, and meal distribution.
 - `MealCurator`: daily meal builder and totals comparison.
-- `FoodSearch`: searchable local food selector.
+- `FoodSearch`: provider-backed food search selector.
 - `ProgressBars`: reusable target comparison bars.
 
 ## Future Enhancements
 
-- USDA FoodData Central, Nutritionix, or Edamam API integration.
+- Secure backend proxy for USDA FoodData Central, Nutritionix, or Edamam API access.
 - User login and saved daily meal plans.
 - Weekly progress tracking and measurements.
 - Barcode scanning.

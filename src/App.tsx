@@ -45,7 +45,7 @@ export default function App() {
               </div>
               <h1 className="text-3xl font-semibold tracking-normal text-ink sm:text-4xl">Personalized Calorie & Meal Planning</h1>
               <p className="mt-3 max-w-3xl text-base leading-7 text-stone-600">
-                Estimate daily energy needs, choose practical calorie and macro targets, and curate meals from a local starter food database.
+                Estimate daily energy needs, choose practical calorie and macro targets, and curate meals through a local-first food data provider.
               </p>
             </div>
             <div className="rounded-lg border border-citrus/30 bg-citrus/5 p-4 text-sm leading-6 text-stone-700 lg:max-w-md">
@@ -103,9 +103,10 @@ export default function App() {
           )}
 
           <section className="rounded-lg border border-stone-200 bg-white p-5 text-sm leading-6 text-stone-600">
-            <h2 className="text-lg font-semibold text-ink">Future-ready placeholders</h2>
+            <h2 className="text-lg font-semibold text-ink">Future-ready roadmap</h2>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <p>USDA FoodData Central, Nutritionix, or Edamam API integration.</p>
+              <p>Enable USDA FoodData Central through a secure backend proxy.</p>
+              <p>Add Nutritionix or Edamam providers behind the existing food service interface.</p>
               <p>User login and saved daily meal plans.</p>
               <p>Weekly progress tracking and measurement trends.</p>
               <p>Barcode scanning for packaged foods.</p>

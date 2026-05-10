@@ -63,7 +63,7 @@ src/
 The app now uses a food data service abstraction:
 
 - `local`: offline JSON database used by the MVP.
-- `usda`: USDA FoodData Central provider scaffold.
+- `usda`: USDA FoodData Central provider scaffold, ready for local experimentation and future backend-proxied use.
 - `nutritionix` and `edamam`: future provider placeholders.
 
 For local experimentation with USDA, copy `.env.example` to `.env` and add:
@@ -84,7 +84,8 @@ Important: `VITE_*` environment variables are bundled into frontend code. Do not
 
 ## Future Enhancements
 
-- USDA FoodData Central, Nutritionix, or Edamam integration.
+- Backend proxy for secure external food provider access.
+- Nutritionix or Edamam provider implementation.
 - User login and saved meal plans.
 - Weekly progress tracking.
 - Barcode scanning.
