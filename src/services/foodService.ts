@@ -39,68 +39,6 @@ export const localFoodProvider: FoodDataProvider = {
   },
 };
 
-interface EdamamParserResponse {
-  hints?: Array<{
-    food: {
-      foodId: string;
-      label: string;
-      category?: string;
-      categoryLabel?: string;
-      brand?: string;
-      nutrients?: {
-        ENERC_KCAL?: number;
-        PROCNT?: number;
-        FAT?: number;
-        CHOCDF?: number;
-        FIBTG?: number;
-        SUGAR?: number;
-      };
-    };
-    measures?: Array<{
-      label: string;
-      weight?: number;
-    }>;
-  }>;
-}
-
-function mapEdamamFood(hint: NonNullable<EdamamParserResponse["hints"]>[number]): FoodSearchResult {
-  const nutrients = hint.food.nutrients ?? {};
-  const servingMeasure = hint.measures?.find((measure) => measure.label.toLowerCase() === "serving") ?? hint.measures?.[0];
-  const servingWeight = servingMeasure?.weight ?? 100;
-  const item: FoodItem = {
-    id: `edamam-${hint.food.foodId}`,
-    name: hint.food.label,
-    category: hint.food.categoryLabel ?? hint.food.category ?? "Edamam food",
-    defaultUnit: "grams",
-    baseAmount: 100,
-    baseUnit: "grams",
-    gramsPerUnit: {
-      grams: 1,
-      oz: 28.35,
-      serving: servingWeight,
-    },
-    nutrition: {
-      calories: nutrients.ENERC_KCAL ?? 0,
-      protein: nutrients.PROCNT ?? 0,
-      carbs: nutrients.CHOCDF ?? 0,
-      fat: nutrients.FAT ?? 0,
-      fiber: nutrients.FIBTG ?? 0,
-      sugar: nutrients.SUGAR ?? 0,
-    },
-    dietaryTags: ["balanced"],
-  };
-
-  return {
-    id: `edamam:${hint.food.foodId}`,
-    displayName: hint.food.label,
-    category: item.category,
-    source: "edamam",
-    food: item,
-    externalId: hint.food.foodId,
-    brandName: hint.food.brand,
-  };
-}
-
 interface UsdaFoodSearchResponse {
   foods?: Array<{
     fdcId: number;
@@ -163,7 +101,7 @@ export const usdaFoodProvider: FoodDataProvider = {
 
     // Vite exposes VITE_* variables to browser code. This is acceptable only
     // for local experiments with public/demo keys. For production, do not put
-    // USDA, Edamam, Nutritionix, or any paid API key in frontend code. Route
+    // USDA, Nutritionix, or any paid API key in frontend code. Route
     // requests through a backend proxy that keeps secrets server-side.
     const apiKey = import.meta.env.VITE_USDA_FOODDATA_API_KEY;
     if (!apiKey) return [];
@@ -201,51 +139,17 @@ export const nutritionixFoodProvider: FoodDataProvider = {
   },
 };
 
-export const edamamFoodProvider: FoodDataProvider = {
-  source: "edamam",
-  async searchFoods(options: FoodSearchOptions = {}) {
-    const query = options.query?.trim();
-    if (!query) return [];
-
-    // Edamam Food Database API credentials are exposed if they are used as
-    // VITE_* browser variables. This direct call is for local experiments only.
-    // Production should use a backend proxy and keep app_id/app_key server-side.
-    const appId = import.meta.env.VITE_EDAMAM_APP_ID;
-    const appKey = import.meta.env.VITE_EDAMAM_APP_KEY;
-    if (!appId || !appKey) return [];
-
-    const params = new URLSearchParams({
-      app_id: appId,
-      app_key: appKey,
-      ingr: query,
-    });
-
-    const response = await fetch(`https://api.edamam.com/api/food-database/v2/parser?${params.toString()}`);
-    if (!response.ok) {
-      throw new Error(`Edamam Food Database request failed: ${response.status}`);
-    }
-
-    const data = (await response.json()) as EdamamParserResponse;
-    return (data.hints ?? []).slice(0, options.limit ?? 10).map(mapEdamamFood);
-  },
-  async getFoodById(id: string) {
-    const result = await this.searchFoods({ query: id, limit: 1 });
-    return result[0]?.food;
-  },
-};
-
 export const foodProviders = {
   local: localFoodProvider,
   usda: usdaFoodProvider,
   nutritionix: nutritionixFoodProvider,
-  edamam: edamamFoodProvider,
 } satisfies Record<string, FoodDataProvider>;
 
 export type SupportedFoodProvider = keyof typeof foodProviders;
 
 export const selectableFoodSources: Array<{ value: SupportedFoodProvider; label: string; description: string }> = [
   { value: "local", label: "Local", description: "Offline starter database" },
-  { value: "edamam", label: "Edamam", description: "Requires local demo credentials" },
+  { value: "usda", label: "USDA", description: "Requires local demo key" },
 ];
 
 export async function searchFoods(source: SupportedFoodProvider, options: FoodSearchOptions = {}) {

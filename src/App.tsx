@@ -87,9 +87,8 @@ export default function App() {
           <details className="rounded-lg border border-stone-200/80 bg-white p-5 text-sm leading-6 text-stone-600">
             <summary className="cursor-pointer font-semibold text-ink">Future-ready roadmap</summary>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <p>Enable USDA FoodData Central through a secure backend proxy.</p>
-              <p>Move Edamam calls behind a secure backend proxy for production.</p>
-              <p>Revisit Nutritionix as a future provider when credentials and availability are ready.</p>
+              <p>Move USDA FoodData Central calls behind a secure backend proxy for production.</p>
+              <p>Revisit Nutritionix as a future provider if needed.</p>
               <p>User login and saved daily meal plans.</p>
               <p>Weekly progress tracking and measurement trends.</p>
               <p>Barcode scanning for packaged foods.</p>

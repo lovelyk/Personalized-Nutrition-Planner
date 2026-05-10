@@ -20,7 +20,7 @@ Build a locally hosted browser app that helps users estimate daily calorie needs
 - `UserProfile`: intake answers and optional body composition/timeline fields.
 - `NutritionPlan`: calculated BMR, TDEE, calorie target, macro targets, warnings, explanation, and meal distribution.
 - `FoodItem`: normalized food entry from the active provider.
-- `FoodSearchResult`: provider-agnostic search result that can represent local, USDA, Nutritionix, or Edamam data.
+- `FoodSearchResult`: provider-agnostic search result that can represent local, USDA, or future Nutritionix data.
 - `MealEntry`: selected food, quantity, unit, meal slot, and derived nutrition.
 - `NutritionTotals`: calories, protein, carbs, fat, fiber, and sugar.
 
@@ -64,8 +64,8 @@ The app provides educational nutrition estimates and does not replace medical ad
 
 ## Future Enhancements
 
-- Secure backend proxy for USDA FoodData Central, Edamam, or future Nutritionix API access.
-- Production hardening for the Edamam provider that is currently available for local credential-based experiments.
+- Secure backend proxy for USDA FoodData Central and any future Nutritionix API access.
+- Production hardening for the USDA provider that is currently available for local credential-based experiments.
 - User login and saved daily meal plans.
 - Weekly progress tracking and measurements.
 - Barcode scanning.

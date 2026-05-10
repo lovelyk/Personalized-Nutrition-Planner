@@ -95,7 +95,7 @@ export interface FoodItem {
   dietaryTags: DietaryPreference[];
 }
 
-export type FoodDataSource = "local" | "usda" | "nutritionix" | "edamam";
+export type FoodDataSource = "local" | "usda" | "nutritionix";
 
 export interface FoodSearchResult {
   id: string;
