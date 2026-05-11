@@ -67,6 +67,8 @@ export interface NutritionPlan {
   plannedCalorieAdjustmentPercent: number;
   actualCalorieAdjustmentPercent: number;
   timelineCalorieAdjustment?: number;
+  timelineTargetCalories?: number;
+  isTimelineCapped: boolean;
   targetCalories: number;
   macros: MacroTargets;
   mealDistribution: MealDistribution;

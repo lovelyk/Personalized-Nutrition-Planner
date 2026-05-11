@@ -29,7 +29,7 @@ export default function CalorieSummary({ plan }: CalorieSummaryProps) {
         <MetricCard
           label="Daily target"
           value={`${plan.targetCalories} kcal`}
-          detail={`${plan.explanation} ${plan.timelineCalorieAdjustment !== undefined ? `Timeline adjustment: ${plan.timelineCalorieAdjustment > 0 ? "+" : ""}${plan.timelineCalorieAdjustment} kcal/day. ` : `Planned adjustment: ${plan.plannedCalorieAdjustmentPercent > 0 ? "+" : ""}${plan.plannedCalorieAdjustmentPercent}%. `}Actual adjustment after safety checks: ${plan.actualCalorieAdjustmentPercent > 0 ? "+" : ""}${plan.actualCalorieAdjustmentPercent}% versus TDEE.`}
+          detail={`${plan.explanation} ${plan.timelineCalorieAdjustment !== undefined ? `Timeline target before safety caps: ${plan.timelineTargetCalories} kcal (${plan.timelineCalorieAdjustment > 0 ? "+" : ""}${plan.timelineCalorieAdjustment} kcal/day). ${plan.isTimelineCapped ? "Safety caps adjusted the final target. " : ""}` : `Planned adjustment: ${plan.plannedCalorieAdjustmentPercent > 0 ? "+" : ""}${plan.plannedCalorieAdjustmentPercent}%. `}Actual adjustment after safety checks: ${plan.actualCalorieAdjustmentPercent > 0 ? "+" : ""}${plan.actualCalorieAdjustmentPercent}% versus TDEE.`}
         />
       </div>
 

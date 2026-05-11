@@ -121,39 +121,31 @@ function getSafeSurplusCeiling(tdee: number) {
   return tdee * 1.15;
 }
 
+function applyGoalSafetyCaps(profile: UserProfile, rawTarget: number, tdee: number) {
+  if (rawTarget < tdee) {
+    return Math.max(rawTarget, getDeficitFloor(profile, tdee));
+  }
+
+  if (rawTarget > tdee && (profile.goal === "muscle-gain" || profile.goal === "recomposition")) {
+    return Math.min(rawTarget, getSafeSurplusCeiling(tdee));
+  }
+
+  return rawTarget;
+}
+
 function getGoalCalorieTarget(profile: UserProfile, tdee: number) {
   const plannedCalorieAdjustmentPercent = getGoalAdjustmentPercent(profile.goal, profile.pace);
   const defaultAdjustment = tdee * plannedCalorieAdjustmentPercent;
   const timelineAdjustment = getTimelineCalorieAdjustment(profile);
-  const shouldUseTimeline =
-    timelineAdjustment !== undefined &&
-    ((profile.goal === "fat-loss" && timelineAdjustment < 0) || (profile.goal === "muscle-gain" && timelineAdjustment > 0));
+  const shouldUseTimeline = timelineAdjustment !== undefined && profile.goal !== "maintenance";
   const chosenAdjustment = shouldUseTimeline ? timelineAdjustment : defaultAdjustment;
   const rawTarget = tdee + chosenAdjustment;
-
-  if (profile.goal === "fat-loss" || profile.goal === "recomposition") {
-    return {
-      plannedCalorieAdjustmentPercent,
-      rawTarget,
-      targetCalories: Math.max(rawTarget, getDeficitFloor(profile, tdee)),
-      timelineAdjustment: shouldUseTimeline ? timelineAdjustment : undefined,
-    };
-  }
-
-  if (profile.goal === "muscle-gain") {
-    return {
-      plannedCalorieAdjustmentPercent,
-      rawTarget,
-      targetCalories: Math.min(rawTarget, getSafeSurplusCeiling(tdee)),
-      timelineAdjustment: shouldUseTimeline ? timelineAdjustment : undefined,
-    };
-  }
 
   return {
     plannedCalorieAdjustmentPercent,
     rawTarget,
-    targetCalories: rawTarget,
-    timelineAdjustment: undefined,
+    targetCalories: applyGoalSafetyCaps(profile, rawTarget, tdee),
+    timelineAdjustment: shouldUseTimeline ? timelineAdjustment : undefined,
   };
 }
 
@@ -233,7 +225,7 @@ function buildWarnings(profile: UserProfile, targetCalories: number, rawTarget: 
   }
 
   if (timelineAdjustment !== undefined && Math.round(targetCalories) !== Math.round(rawTarget)) {
-    warnings.push("Your timeline target was adjusted by the app's safety limits. Consider a longer timeline if the adjusted calories feel too aggressive.");
+    warnings.push("Your timeline target was adjusted by the app's safety limits. If the calorie target is not changing across shorter timelines, the safety cap is the reason. Consider a longer timeline.");
   }
 
   if (profile.goal === "fat-loss" && profile.pace === "aggressive") {
@@ -326,6 +318,8 @@ export function calculateNutritionPlan(profile: UserProfile): NutritionPlan {
     plannedCalorieAdjustmentPercent: round(plannedCalorieAdjustmentPercent * 100, 1),
     actualCalorieAdjustmentPercent: round(actualCalorieAdjustmentPercent * 100, 1),
     timelineCalorieAdjustment: timelineAdjustment !== undefined ? Math.round(timelineAdjustment) : undefined,
+    timelineTargetCalories: timelineAdjustment !== undefined ? Math.round(rawTarget) : undefined,
+    isTimelineCapped: timelineAdjustment !== undefined && Math.round(targetCalories) !== Math.round(rawTarget),
     targetCalories: Math.round(targetCalories),
     macros,
     mealDistribution: {

@@ -31,7 +31,7 @@ This app provides educational nutrition estimates only. It does not diagnose, tr
 - Mifflin-St Jeor BMR and TDEE calculation.
 - Optional Katch-McArdle BMR comparison when body fat percentage is entered.
 - Goal-based calorie targets with safety floors, aggressive deficit warnings, and medical context notes.
-- Optional target timeline adjusts fat-loss or muscle-gain calories when it matches the selected goal.
+- Optional target timeline adjusts non-maintenance calorie targets when goal weight differs from current weight.
 - Improved protein, carb, fat, fiber, and water targets for fat loss, maintenance, muscle gain, and recomposition.
 - Meal curator using `src/data/foods.json`.
 - Add, edit, remove, and clear food items in the daily meal list.
@@ -83,7 +83,7 @@ Important: `VITE_*` environment variables are bundled into frontend code. Do not
 - TDEE multiplies BMR by a selected activity factor.
 - Katch-McArdle is shown only as an optional comparison when body fat percentage is provided.
 - Fat-loss and recomposition targets are capped to avoid extreme deficits.
-- Target timeline uses an estimated 7,700 kcal per kg of desired weight change, then applies the app's safety caps.
+- Target timeline uses an estimated 7,700 kcal per kg of desired weight change, then applies the app's safety caps. Short timelines may produce the same final target when capped.
 - Protein is prioritized first, fat is protected with a practical minimum, and carbs fill the remaining calorie budget.
 
 ## Future Enhancements
